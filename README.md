@@ -90,7 +90,14 @@
 
         <div class="content-body">
             <!-- DASHBOARD -->
-            <div id="view-dashboard" class="view-section active">
+            <div id="view-dashboard" <div class="card" style="margin-top: 24px;">
+    <h3>Database Management</h3>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Import a CSV file from your distributor to pre-load product recognition. Format: Barcode, Brand, Product Name.</p>
+    <input type="file" id="csv-upload" accept=".csv" style="display:none;" onchange="importDistributorCSV(event)">
+    <button class="btn btn-secondary" onclick="document.getElementById('csv-upload').click()">Import Master CSV Catalog</button>
+    <div id="csv-status" style="font-size: 0.85rem; color: var(--success); margin-top: 8px;"></div>
+</div>
+ class="view-section active">
                 <div id="urgent-alert-container"></div>
                 <div class="metrics-grid">
                     <div class="metric-card"><span class="metric-title">Total Products</span><span class="metric-value" id="stat-total">0</span></div>
@@ -376,6 +383,42 @@
                 alertContainer.innerHTML = `<div class="alert-banner"><div><h4>🚨 Immediate Action: Remove These</h4><p>${urgentList.join('<br>')}</p></div></div>`;
             } else { alertContainer.innerHTML = ''; }
         }
+   // CSV Ingestion Engine
+function importDistributorCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const rows = text.split('\n');
+        let importCount = 0;
+
+        // Assumes CSV format: Barcode, Brand, Product Name
+        rows.forEach(row => {
+            const cols = row.split(',');
+            if (cols.length >= 3) {
+                const barcode = cols[0].trim();
+                const brand = cols[1].trim();
+                const name = cols[2].trim();
+
+                // Ignore headers or empty rows
+                if (barcode && !isNaN(barcode)) {
+                    customProductDB[barcode] = { brand: brand, name: name };
+                    importCount++;
+                }
+            }
+        });
+
+        // Save the massive new catalog to local storage
+        localStorage.setItem('stocksense_custom_db', JSON.stringify(customProductDB));
+        document.getElementById('csv-status').innerText = `Successfully imported ${importCount} products into local memory.`;
+    };
+    
+    reader.readAsText(file);
+}
+
+    
     </script>
 </body>
 </html>
